@@ -7,8 +7,8 @@ namespace NhanAZ\BlockData;
 use JsonException;
 use LevelDB;
 use LevelDBWriteBatch;
-use pocketmine\plugin\PluginBase;
 use pocketmine\world\World;
+use Symfony\Component\Filesystem\Path;
 
 /**
  * @internal Manages block data storage and caching for a single world.
@@ -42,13 +42,13 @@ final class BlockDataWorld{
 	 */
 	private array $chunkBlocks = [];
 
-	public function __construct(PluginBase $plugin, private World $world){
-		$dir = $plugin->getDataFolder() . "blockdata";
-		if(!is_dir($dir)){
-			@mkdir($dir, 0777, true);
+	public function __construct(string $dataPath, private World $world){
+		$worldPath = Path::join($dataPath, $this->world->getFolderName());
+		if(!mkdir($worldPath, 0777, true) && !is_dir($worldPath)){
+			throw new \RuntimeException("Directory \"$worldPath\" was not created");
 		}
 
-		$this->db = new LevelDB($dir . DIRECTORY_SEPARATOR . $world->getFolderName(), [
+		$this->db = new LevelDB($worldPath, [
 			"compression" => LEVELDB_SNAPPY_COMPRESSION,
 			"block_size" => 64 * 1024,
 		]);
