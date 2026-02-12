@@ -110,6 +110,10 @@ When enabled, block data is automatically removed on:
 
 If you need custom logic (e.g. transfer data to drops), use `autoCleanup: false` and handle events yourself.
 
+> **Note:** Auto cleanup is *event-based* and only listens to common PocketMine events.  
+> If other plugins modify or remove blocks in custom ways without firing these events, BlockData cannot automatically detect those changes. In that case, you should manually remove or update block data in your own code.  
+> See [Issue #8 – Event-Based Block Tracking Issues](https://github.com/NhanAZ-Libraries/BlockData/issues/8) for discussion and rationale.
+
 ## Custom Data Path
 
 By default, BlockData stores its databases under your plugin's data folder in `blockdata/<worldFolderName>`.
