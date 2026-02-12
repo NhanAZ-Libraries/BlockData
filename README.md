@@ -110,6 +110,26 @@ When enabled, block data is automatically removed on:
 
 If you need custom logic (e.g. transfer data to drops), use `autoCleanup: false` and handle events yourself.
 
+## Custom Data Path
+
+By default, BlockData stores its databases under your plugin's data folder in `blockdata/<worldFolderName>`.
+You can override the base path by passing a custom `$dataPath`:
+
+```php
+// Store data under a custom directory
+$this->blockData = BlockData::create(
+    $this,
+    autoCleanup: true,
+    dataPath: $this->getServer()->getDataPath() . "custom-blockdata"
+);
+```
+
+This will create per-world LevelDB databases under:
+
+```text
+<dataPath>/<worldFolderName>
+```
+
 ## Example Plugin
 
 See [BlockDataExample](https://github.com/NhanAZ-Plugins/BlockDataExample) for a full working plugin that demonstrates:
@@ -119,7 +139,7 @@ See [BlockDataExample](https://github.com/NhanAZ-Plugins/BlockDataExample) for a
 
 ## API Reference
 
-### `BlockData::create(PluginBase $plugin, bool $autoCleanup = false): BlockData`
+### `BlockData::create(PluginBase $plugin, bool $autoCleanup = false, ?string $dataPath = null): BlockData`
 
 Creates a new BlockData instance. Call once in `onEnable()`.
 
@@ -127,6 +147,7 @@ Creates a new BlockData instance. Call once in `onEnable()`.
 |-----------|------|---------|-------------|
 | `$plugin` | `PluginBase` | *(required)* | Your plugin instance |
 | `$autoCleanup` | `bool` | `false` | Auto-remove data when blocks are destroyed |
+| `$dataPath` | `string\|null` | `null` | Base directory for storing per-world LevelDB databases. Defaults to `<plugin data folder>/blockdata`. |
 
 ### Block Methods
 

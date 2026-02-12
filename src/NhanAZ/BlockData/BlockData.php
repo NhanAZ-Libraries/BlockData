@@ -10,6 +10,7 @@ use pocketmine\block\Block;
 use pocketmine\plugin\PluginBase;
 use pocketmine\world\World;
 use RuntimeException;
+use Symfony\Component\Filesystem\Path;
 
 /**
  * A high-performance, developer-friendly library for storing custom data on blocks.
@@ -26,18 +27,23 @@ final class BlockData{
 	private array $worlds = [];
 
 	private function __construct(
-		private PluginBase $plugin,
+		private string $dataPath,
 	){}
 
 	/**
 	 * Creates a new BlockData instance for your plugin.
 	 * Call this once in your plugin's onEnable() method.
 	 *
-	 * @param PluginBase $plugin      Your plugin instance
-	 * @param bool       $autoCleanup If true, block data is automatically removed
-	 *                                when blocks are destroyed (break, explode, burn, decay)
+	 * @param PluginBase  $plugin      Your plugin instance
+	 * @param bool        $autoCleanup If true, block data is automatically removed
+	 *                                 when blocks are destroyed (break, explode, burn, decay)
+	 * @param string|null $dataPath    Base directory for storing per-world LevelDB databases.
+	 *                                 If null, defaults to "<plugin data folder>/blockdata".
+	 *
+	 * @throws \RuntimeException If LevelDB extension is missing
+	 *                            or data directory cannot be created
 	 */
-	public static function create(PluginBase $plugin, bool $autoCleanup = false) : self{
+	public static function create(PluginBase $plugin, bool $autoCleanup = false, ?string $dataPath = null) : self{
 		if(!extension_loaded("leveldb")){
 			throw new RuntimeException(
 				"BlockData requires the LevelDB PHP extension. " .
@@ -45,7 +51,7 @@ final class BlockData{
 			);
 		}
 
-		$instance = new self($plugin);
+		$instance = new self($dataPath ?? Path::join($plugin->getDataFolder(), "blockdata"));
 		$server = $plugin->getServer();
 
 		$server->getPluginManager()->registerEvents(
@@ -144,7 +150,7 @@ final class BlockData{
 	/** @internal */
 	public function loadWorld(World $world) : void{
 		if(!isset($this->worlds[$world->getId()])){
-			$this->worlds[$world->getId()] = new BlockDataWorld($this->plugin, $world);
+			$this->worlds[$world->getId()] = new BlockDataWorld($this->dataPath, $world);
 		}
 	}
 
