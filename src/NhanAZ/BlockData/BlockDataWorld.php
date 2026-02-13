@@ -22,8 +22,8 @@ final class BlockDataWorld{
 	private LevelDB $db;
 
 	/**
-	 * In-memory cache: blockHash => stored data (or null if confirmed empty).
-	 * Entries are populated on first read and evicted on chunk unload.
+	 * In-memory cache: blockHash => stored data.
+	 * Only non-null values are cached; cache entries are evicted on chunk unload.
 	 * @var array<int, mixed>
 	 */
 	private array $cache = [];
@@ -79,8 +79,11 @@ final class BlockDataWorld{
 			$data = null;
 		}
 
-		$this->cache[$hash] = $data;
-		$this->trackBlock($x, $z, $hash);
+		// Only cache non-null values to avoid unbounded "dead cache" growth
+		if($data !== null){
+			$this->cache[$hash] = $data;
+			$this->trackBlock($x, $z, $hash);
+		}
 
 		return $data;
 	}
