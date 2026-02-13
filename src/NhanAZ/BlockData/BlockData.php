@@ -25,9 +25,12 @@ final class BlockData{
 
 	/** @var array<int, BlockDataWorld> */
 	private array $worlds = [];
+	/** @var array<int, BlockDataChunkListener> */
+	private array $chunk_listeners = [];
 
 	private function __construct(
 		private string $dataPath,
+		private bool $autoCleanup
 	){}
 
 	/**
@@ -51,11 +54,11 @@ final class BlockData{
 			);
 		}
 
-		$instance = new self($dataPath ?? Path::join($plugin->getDataFolder(), "blockdata"));
+		$instance = new self($dataPath ?? Path::join($plugin->getDataFolder(), "blockdata"), $autoCleanup);
 		$server = $plugin->getServer();
 
 		$server->getPluginManager()->registerEvents(
-			new BlockDataListener($instance, $plugin, $autoCleanup),
+			new BlockDataListener($instance, $plugin),
 			$plugin
 		);
 
@@ -151,6 +154,13 @@ final class BlockData{
 	public function loadWorld(World $world) : void{
 		if(!isset($this->worlds[$world->getId()])){
 			$this->worlds[$world->getId()] = new BlockDataWorld($this->dataPath, $world);
+			if($this->autoCleanup){
+				$listener = ($this->chunk_listeners[$world->getId()] ??= new BlockDataChunkListener($this, $world));
+				foreach($world->getLoadedChunks() as $hash => $_){
+					World::getXZ($hash, $x, $z);
+					$world->registerChunkListener($listener, $x, $z);
+				}
+			}
 		}
 	}
 
@@ -158,6 +168,10 @@ final class BlockData{
 	public function unloadWorld(World $world) : void{
 		$id = $world->getId();
 		if(isset($this->worlds[$id])){
+			if($this->autoCleanup && isset($this->chunk_listeners[$id])){
+				$world->unregisterChunkListenerFromAll($this->chunk_listeners[$id]);
+				unset($this->chunk_listeners[$id]);
+			}
 			$this->worlds[$id]->close();
 			unset($this->worlds[$id]);
 		}
@@ -173,8 +187,12 @@ final class BlockData{
 
 	/** @internal */
 	public function onChunkLoad(World $world, int $chunkX, int $chunkZ) : void{
-		if(isset($this->worlds[$world->getId()])){
-			$this->worlds[$world->getId()]->loadChunk($chunkX, $chunkZ);
+		$id = $world->getId();
+		if(isset($this->worlds[$id])){
+			if($this->autoCleanup && isset($this->chunk_listeners[$id])){
+				$world->registerChunkListener($this->chunk_listeners[$id], $chunkX, $chunkZ);
+			}
+			$this->worlds[$id]->loadChunk($chunkX, $chunkZ);
 		}
 	}
 
@@ -182,6 +200,9 @@ final class BlockData{
 	public function onChunkUnload(World $world, int $chunkX, int $chunkZ) : void{
 		$id = $world->getId();
 		if(isset($this->worlds[$id])){
+			if($this->autoCleanup && isset($this->chunk_listeners[$id])){
+				$world->unregisterChunkListener($this->chunk_listeners[$id], $chunkX, $chunkZ);
+			}
 			$this->worlds[$id]->unloadChunk($chunkX, $chunkZ);
 		}
 	}
