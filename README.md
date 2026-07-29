@@ -13,19 +13,34 @@ A high-performance, developer-friendly virion for storing custom data on blocks 
 - **Chunk-Aware** - Cache eviction follows chunk lifecycle to prevent memory leaks
 - **Multi-Plugin Safe** - Each plugin gets its own isolated LevelDB database
 
-## Installation
+## Use with DevTools
 
-**Composer:**
-```bash
-composer require nhanaz/blockdata
-```
+BlockData is a virion, not a standalone plugin. Declare it in the host plugin's `devtools.yml`:
 
-**Poggit Virion** - add to your `.poggit.yml`:
 ```yaml
-libs:
-  - src: NhanAZ-Libraries/BlockData/BlockData
+virions:
+  - name: BlockData
     version: ^1.0.0
 ```
+
+For folder-plugin development, install `DevTools.phar` and use this server layout:
+
+```text
+server/
+|- plugins/
+|  |- DevTools.phar
+|  `- YourPlugin/
+`- virions/
+   `- BlockData/
+      |- virion.yml
+      `- src/
+```
+
+DevTools loads one compatible BlockData source for development. Run `/devtools doctor YourPlugin` to validate the project and `/devtools build YourPlugin` to create a standalone production PHAR with BlockData shaded into a private namespace.
+
+For GitHub Actions, check out this repository at an exact commit into `virions/BlockData`, then run `NhanAZ/DevTools@v0.1.0`. See the complete [BlockDataExample workflow](https://github.com/NhanAZ-Plugins/BlockDataExample/blob/master/.github/workflows/build.yml).
+
+Do not place this repository directly in the server's `plugins/` directory. Use [BlockDataExample](https://github.com/NhanAZ-Plugins/BlockDataExample) for a ready-to-run plugin.
 
 ## Quick Start
 
@@ -112,7 +127,7 @@ If you need custom logic (e.g. transfer data to drops), use `autoCleanup: false`
 
 > **Note:** Auto cleanup is *event-based* and only listens to common PocketMine events.  
 > If other plugins modify or remove blocks in custom ways without firing these events, BlockData cannot automatically detect those changes. In that case, you should manually remove or update block data in your own code.  
-> See [Issue #8 – Event-Based Block Tracking Issues](https://github.com/NhanAZ-Libraries/BlockData/issues/8) for discussion and rationale.
+> See [Issue #8 - Event-Based Block Tracking Issues](https://github.com/NhanAZ-Libraries/BlockData/issues/8) for discussion and rationale.
 
 ## Custom Data Path
 
@@ -223,8 +238,8 @@ This library is heavily inspired by `Cosmoverse/BlockData`, but focuses more on 
 | **Type safety** | Dynamic (runtime JSON validation) | Static via `BlockData` interface | Cosmoverse enforces stricter contracts; this library trades some strictness for simplicity |
 | **Auto cleanup** | Built-in for 4 events (break, explode, burn, leaves decay) | Not built-in (plugin must handle) | Reduces boilerplate for common scenarios |
 | **Learning curve** | Very low (3 core methods) | Medium (NBT, factories, custom classes) | Designed to be friendly for non-expert developers and editors |
-| **Extensibility** | Easy to extend by adding more keys to the stored array | Easy to extend by adding more fields to NBT classes | Choice between “just add another array key” vs creating/updating a class |
-| **Best fit** | Simple–medium plugins that want fast storage with minimal boilerplate | Complex plugins needing multiple strongly-typed `BlockData` classes per block | Both are production-ready; pick based on complexity and team experience |
+| **Extensibility** | Easy to extend by adding more keys to the stored array | Easy to extend by adding more fields to NBT classes | Choice between "just add another array key" vs creating/updating a class |
+| **Best fit** | Simple-medium plugins that want fast storage with minimal boilerplate | Complex plugins needing multiple strongly-typed `BlockData` classes per block | Both are production-ready; pick based on complexity and team experience |
 
 In short, `Cosmoverse/BlockData` is an excellent, highly flexible low-level building block.  
 This library repackages the same core ideas into a **smaller, flatter API** that is easier to adopt quickly, without giving up LevelDB performance.

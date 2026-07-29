@@ -1,0 +1,56 @@
+name: Validate
+
+on:
+  push:
+    branches: [master]
+    tags: ["v*"]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate BlockData virion
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out BlockData
+        uses: actions/checkout@v7.0.1
+
+      - name: Check out PocketMine PHP setup helper
+        uses: actions/checkout@v7.0.1
+        with:
+          repository: pmmp/setup-php-action
+          ref: 3c38c259834f945351a662392836d90eb08abff0
+          path: .devtools-dependencies/setup-php-action
+          persist-credentials: false
+
+      - name: Set up PocketMine PHP on Node.js 24
+        shell: bash
+        env:
+          INPUT_PHP-VERSION: "8.1"
+          INPUT_PM-VERSION-MAJOR: "5"
+          INPUT_INSTALL-PATH: ./.php-bin
+        run: node "$GITHUB_WORKSPACE/.devtools-dependencies/setup-php-action/dist/index.js"
+
+      - name: Validate Composer metadata
+        run: composer validate --strict --no-check-publish
+
+      - name: Lint PHP sources
+        shell: bash
+        run: find src -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Validate virion manifest
+        shell: bash
+        run: |
+          php -r '
+            $manifest = yaml_parse_file("virion.yml");
+            if (!is_array($manifest) || ($manifest["name"] ?? null) !== "BlockData" || ($manifest["antigen"] ?? null) !== "NhanAZ\\BlockData") {
+                fwrite(STDERR, "Invalid BlockData virion.yml\n");
+                exit(1);
+            }
+            echo "BlockData virion manifest is valid.\n";
+          '
