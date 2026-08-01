@@ -38,7 +38,7 @@ server/
 
 DevTools loads one compatible BlockData source for development. Run `/devtools doctor YourPlugin` to validate the project and `/devtools build YourPlugin` to create a standalone production PHAR with BlockData shaded into a private namespace.
 
-For GitHub Actions, check out this repository at an exact commit into `virions/BlockData`, then run `NhanAZ/DevTools@v0.1.0`. See the complete [BlockDataExample workflow](https://github.com/NhanAZ-Plugins/BlockDataExample/blob/master/.github/workflows/build.yml).
+For GitHub Actions, check out this repository at an exact commit into `virions/BlockData`, then run `NhanAZ-Plugins/DevTools@v0.1.0`. See the complete [BlockDataExample workflow](https://github.com/NhanAZ-Plugins/BlockDataExample/blob/master/.github/workflows/build.yml).
 
 Do not place this repository directly in the server's `plugins/` directory. Use [BlockDataExample](https://github.com/NhanAZ-Plugins/BlockDataExample) for a ready-to-run plugin.
 
