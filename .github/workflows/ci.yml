@@ -20,15 +20,15 @@ jobs:
       - name: Check out BlockData
         uses: actions/checkout@v7.0.1
 
-      - name: Check out PocketMine PHP setup helper
+      - name: Check out Axolotl PHP setup helper
         uses: actions/checkout@v7.0.1
         with:
-          repository: pmmp/setup-php-action
-          ref: 3c38c259834f945351a662392836d90eb08abff0
+          repository: axolotl-pm/setup-php-action
+          ref: b8c3f9add4f2ad4a5e2624a1112aba899ee8db0e
           path: .devtools-dependencies/setup-php-action
           persist-credentials: false
 
-      - name: Set up PocketMine PHP on Node.js 24
+      - name: Set up Axolotl PHP on Node.js 24
         shell: bash
         env:
           INPUT_PHP-VERSION: "8.1"
