@@ -1,5 +1,4 @@
 name: Validate
-run-name: Validate - ${{ github.ref_name }} - ${{ github.event_name }}
 
 on:
   push:
