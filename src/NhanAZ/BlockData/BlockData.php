@@ -13,7 +13,7 @@ use RuntimeException;
 use Symfony\Component\Filesystem\Path;
 
 /**
- * A high-performance, developer-friendly library for storing custom data on blocks.
+ * Stores JSON-compatible data at block coordinates.
  *
  * Usage:
  *   $blockData = BlockData::create($this);
@@ -47,7 +47,7 @@ final class BlockData{
 		if(!extension_loaded("leveldb")){
 			throw new RuntimeException(
 				"BlockData requires the LevelDB PHP extension. " .
-				"This extension is bundled with PocketMine-MP by default."
+				"This extension is bundled with Axolotl-PM by default."
 			);
 		}
 

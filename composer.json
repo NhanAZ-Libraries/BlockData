@@ -1,14 +1,44 @@
 {
     "name": "nhanaz/blockdata",
     "type": "library",
-    "description": "A high-performance, developer-friendly virion for storing custom data on blocks",
+    "description": "A virion for persistent JSON data attached to blocks on Axolotl-PM",
     "license": "LGPL-3.0-or-later",
     "require": {
         "php": "^8.1",
+        "ext-json": "*",
+        "ext-leveldb": "*",
         "pocketmine/pocketmine-mp": "^5.0.0"
     },
+    "require-dev": {
+        "axolotl-pm/pocketmine-mp": "5.49.1",
+        "friendsofphp/php-cs-fixer": "^3.64",
+        "phpstan/phpstan": "^2.1"
+    },
     "autoload": {
-        "classmap": ["src"]
+        "psr-4": {
+            "NhanAZ\\BlockData\\": "src/NhanAZ/BlockData/"
+        }
+    },
+    "config": {
+        "allow-plugins": false,
+        "platform": {
+            "php": "8.1.0"
+        },
+        "sort-packages": true
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/axolotl-pm/PocketMine-MP",
+            "no-api": true
+        }
+    ],
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "scripts": {
+        "lint": "@php vendor/bin/php-cs-fixer check --diff",
+        "phpstan": "@php vendor/bin/phpstan analyse --level=max --no-progress src",
+        "test": "@php tests/storage.php"
     },
     "extra": {
         "virion": {

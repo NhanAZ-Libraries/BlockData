@@ -1,8 +1,8 @@
 ---
 name: BlockData
-version: 1.0.0
+version: 1.0.1
 antigen: NhanAZ\BlockData
 api: [5.0.0]
 authors: [NhanAZ]
-description: A high-performance, developer-friendly virion for storing custom data on blocks
+description: Persistent JSON data attached to blocks for Axolotl-PM plugins
 ...

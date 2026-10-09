@@ -37,11 +37,23 @@ jobs:
         run: node "$GITHUB_WORKSPACE/.devtools-dependencies/setup-php-action/dist/index.js"
 
       - name: Validate Composer metadata
-        run: composer validate --strict --no-check-publish
+        run: composer validate --strict
+
+      - name: Install locked development dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress --no-scripts --no-plugins
+
+      - name: Check source style
+        run: composer lint
+
+      - name: Analyze source at PHPStan level max
+        run: composer phpstan
+
+      - name: Test LevelDB persistence and failed flush handling
+        run: composer test
 
       - name: Lint PHP sources
         shell: bash
-        run: find src -name '*.php' -print0 | xargs -0 -n1 php -l
+        run: find src tests -name '*.php' -print0 | xargs -0 -n1 php -l
 
       - name: Validate virion manifest
         shell: bash

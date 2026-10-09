@@ -13,7 +13,7 @@ use Symfony\Component\Filesystem\Path;
 /**
  * @internal Manages block data storage and caching for a single world.
  *
- * Uses LevelDB with Snappy compression for high-performance key-value storage.
+ * Uses LevelDB with Snappy compression for key-value storage.
  * Implements lazy loading (read from DB only on first access) and
  * write-behind batching (queue writes, flush on save/chunk unload).
  */
@@ -129,17 +129,13 @@ final class BlockDataWorld{
 	public function unloadChunk(int $chunkX, int $chunkZ) : void{
 		$chunkHash = World::chunkHash($chunkX, $chunkZ);
 
-		try{
-			$this->flushChunk($chunkHash);
-		}finally{
-			// Always evict cache, even if flush fails
-			if(isset($this->chunkBlocks[$chunkHash])){
-				foreach($this->chunkBlocks[$chunkHash] as $blockHash => $_){
-					unset($this->cache[$blockHash]);
-					unset($this->dirty[$blockHash]);
-				}
-				unset($this->chunkBlocks[$chunkHash]);
+		$this->flushChunk($chunkHash);
+		if(isset($this->chunkBlocks[$chunkHash])){
+			foreach($this->chunkBlocks[$chunkHash] as $blockHash => $_){
+				unset($this->cache[$blockHash]);
+				unset($this->dirty[$blockHash]);
 			}
+			unset($this->chunkBlocks[$chunkHash]);
 		}
 	}
 
