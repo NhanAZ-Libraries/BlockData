@@ -1,4 +1,4 @@
-name: Validate
+name: Test and analyze BlockData virion
 
 on:
   push:
