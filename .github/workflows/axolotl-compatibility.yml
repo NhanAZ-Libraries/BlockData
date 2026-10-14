@@ -1,0 +1,147 @@
+name: Check Axolotl-PM compatibility
+
+on:
+  schedule:
+    - cron: "23 4 * * 1"
+  workflow_dispatch:
+    inputs:
+      verify_baseline:
+        description: Run the compatibility gates against the locked release when no newer stable exists
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: axolotl-pm_compatibility
+  cancel-in-progress: false
+
+jobs:
+  compatibility:
+    name: Check BlockData against the latest stable release
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out BlockData
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Compare the stable release with the locked baseline
+        id: candidate
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERIFY_BASELINE: ${{ inputs.verify_baseline || false }}
+        run: |
+          set -euo pipefail
+          api_headers=(
+            --header "Accept: application/vnd.github+json"
+            --header "Authorization: Bearer $GH_TOKEN"
+            --header "X-GitHub-Api-Version: 2022-11-28"
+          )
+          release="$(curl --fail --silent --show-error --location --retry 3 "${api_headers[@]}" https://api.github.com/repos/axolotl-pm/PocketMine-MP/releases/latest)"
+          tag="$(jq -er '.tag_name' <<< "$release")"
+          [[ "$tag" =~ ^5\.[0-9]+\.[0-9]+$ ]]
+          sha="$(curl --fail --silent --show-error --location --retry 3 "${api_headers[@]}" "https://api.github.com/repos/axolotl-pm/PocketMine-MP/commits/$tag" | jq -er '.sha')"
+          [[ "$sha" =~ ^[0-9a-f]{40}$ ]]
+          locked="$(jq -cer '([.packages[]?, .["packages-dev"][]?] | map(select(.name == "axolotl-pm/pocketmine-mp")) | if length == 1 then .[0] else error("expected one locked Axolotl-PM package") end)' composer.lock)"
+          locked_version="$(jq -er '.version' <<< "$locked")"
+          locked_sha="$(jq -er '.source.reference' <<< "$locked")"
+          candidate=false
+          if [[ "$tag" != "$locked_version" || "$sha" != "$locked_sha" || "$VERIFY_BASELINE" == "true" ]]; then
+            candidate=true
+          fi
+          {
+            echo "tag=$tag"
+            echo "sha=$sha"
+            echo "candidate=$candidate"
+          } >> "$GITHUB_OUTPUT"
+          if [[ "$candidate" == "true" ]]; then
+            printf '### Axolotl-PM compatibility candidate\n\nStable release `%s` at `%s`; locked baseline `%s` at `%s`. Compatibility gates will run.\n' "$tag" "$sha" "$locked_version" "$locked_sha" >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf 'Latest stable `%s` at `%s` matches the locked baseline; compatibility gates were skipped.\n' "$tag" "$sha" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Set up PHP with Axolotl-PM
+        if: steps.candidate.outputs.candidate == 'true'
+        uses: axolotl-pm/setup-php-action@b8c3f9add4f2ad4a5e2624a1112aba899ee8db0e
+        with:
+          php-version: "8.1"
+          pm-version-major: "5"
+          install-path: ./.php-bin
+
+      - name: Resolve the candidate in a transient manifest
+        if: steps.candidate.outputs.candidate == 'true'
+        env:
+          CANDIDATE_TAG: ${{ steps.candidate.outputs.tag }}
+          CANDIDATE_SHA: ${{ steps.candidate.outputs.sha }}
+        run: |
+          set -euo pipefail
+          php -r '
+            $path = "composer.json";
+            $manifest = json_decode(file_get_contents($path), true, flags: JSON_THROW_ON_ERROR);
+            $tag = $argv[1];
+            if (!preg_match("/^5\\.[0-9]+\\.[0-9]+$/D", $tag)) {
+                throw new RuntimeException("Refusing a non-stable Axolotl-PM tag");
+            }
+            $manifest["require-dev"]["axolotl-pm/pocketmine-mp"] = $tag;
+            file_put_contents($path, json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
+          ' "$CANDIDATE_TAG"
+          composer validate --strict
+          composer update axolotl-pm/pocketmine-mp --with-dependencies --no-interaction --prefer-dist --no-progress --no-scripts --no-plugins
+          resolved="$(jq -cer '([.packages[]?, .["packages-dev"][]?] | map(select(.name == "axolotl-pm/pocketmine-mp")) | if length == 1 then .[0] else error("expected one resolved Axolotl-PM package") end)' composer.lock)"
+          resolved_version="$(jq -er '.version' <<< "$resolved")"
+          resolved_sha="$(jq -er '.source.reference' <<< "$resolved")"
+          if [[ "$resolved_version" != "$CANDIDATE_TAG" || "$resolved_sha" != "$CANDIDATE_SHA" ]]; then
+            printf 'Composer resolved %s at %s instead of candidate %s at %s.\n' "$resolved_version" "$resolved_sha" "$CANDIDATE_TAG" "$CANDIDATE_SHA" >&2
+            exit 1
+          fi
+          {
+            echo "RESOLVED_VERSION=$resolved_version"
+            echo "RESOLVED_SHA=$resolved_sha"
+          } >> "$GITHUB_ENV"
+
+      - name: Validate Composer dependencies
+        if: steps.candidate.outputs.candidate == 'true'
+        run: composer validate --strict
+
+      - name: Check source style
+        if: steps.candidate.outputs.candidate == 'true'
+        run: composer lint
+
+      - name: Run PHPStan at maximum level
+        if: steps.candidate.outputs.candidate == 'true'
+        run: composer phpstan
+
+      - name: Test LevelDB persistence and failed flush handling
+        if: steps.candidate.outputs.candidate == 'true'
+        run: composer test
+
+      - name: Lint PHP sources and validate the virion manifest
+        if: steps.candidate.outputs.candidate == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          find src tests -name '*.php' -print0 | xargs -0 -n1 php -l
+          php -r '
+            $manifest = yaml_parse_file("virion.yml");
+            if (!is_array($manifest) || ($manifest["name"] ?? null) !== "BlockData" || ($manifest["antigen"] ?? null) !== "NhanAZ\\BlockData") {
+                fwrite(STDERR, "Invalid BlockData virion.yml\n");
+                exit(1);
+            }
+            echo "BlockData virion manifest is valid.\n";
+          '
+
+      - name: Record compatibility gate result
+        if: always() && steps.candidate.outputs.candidate == 'true'
+        env:
+          GATE_RESULT: ${{ job.status }}
+          CANDIDATE_TAG: ${{ steps.candidate.outputs.tag }}
+          CANDIDATE_SHA: ${{ steps.candidate.outputs.sha }}
+          RESOLVED_VERSION: ${{ env.RESOLVED_VERSION || 'not resolved' }}
+          RESOLVED_SHA: ${{ env.RESOLVED_SHA || 'not resolved' }}
+        run: |
+          printf '## Axolotl-PM compatibility result\n\n- Candidate: `%s` at `%s`\n- Composer resolution: `%s` at `%s`\n- Gate result: **%s**\n\nThe checked-out repository source and lockfile were not committed or changed by this workflow.\n' \
+            "$CANDIDATE_TAG" "$CANDIDATE_SHA" "$RESOLVED_VERSION" "$RESOLVED_SHA" "$GATE_RESULT" >> "$GITHUB_STEP_SUMMARY"
