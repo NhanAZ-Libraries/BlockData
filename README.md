@@ -19,7 +19,7 @@ BlockData is a library for plugin authors. It cannot be installed as a standalon
 
 ## Requirements and compatibility
 
-- The virion declares Axolotl-PM plugin API 5.0.0. The exact tested server revision is recorded in the locked development dependency and [CI workflow](.github/workflows/ci.yml).
+- The virion declares Axolotl-PM plugin API 5.0.0. The exact development dependency revision used by CI is recorded in the lockfile and [CI workflow](.github/workflows/ci.yml); it does not define the supported server patch range.
 - PHP 8.1 or newer, with the JSON and LevelDB extensions supplied by the server.
 - [DevTools](https://github.com/NhanAZ/DevTools) for folder development and shaded PHAR builds. The consumer workflow pins the exact builder revision.
 
