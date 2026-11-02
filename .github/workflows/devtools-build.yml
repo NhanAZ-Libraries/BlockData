@@ -9,8 +9,10 @@ permissions:
 
 jobs:
   build:
-    uses: NhanAZ/DevTools/.github/workflows/build-virion.yml@v2
+    uses: NhanAZ/DevTools/.github/workflows/build-plugin.yml@v2
     with:
+      type: virion
+      phpstan: off
       php-version: '8.4'
       pm-version-major: '5'
       artifact-name: BlockData-virion-${{ github.sha }}
