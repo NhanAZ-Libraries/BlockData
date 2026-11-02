@@ -10,7 +10,7 @@
         "pocketmine/pocketmine-mp": "^5.0.0"
     },
     "require-dev": {
-        "axolotl-pm/pocketmine-mp": "5.49.1",
+        "axolotl-pm/pocketmine-mp": "5.51.1",
         "friendsofphp/php-cs-fixer": "^3.64",
         "phpstan/phpstan": "^2.1"
     },

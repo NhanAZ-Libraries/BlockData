@@ -1,0 +1,17 @@
+name: Build BlockData virion PHAR with DevTools
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    uses: NhanAZ/DevTools/.github/workflows/build-virion.yml@v2
+    with:
+      php-version: '8.4'
+      pm-version-major: '5'
+      artifact-name: BlockData-virion-${{ github.sha }}
+
