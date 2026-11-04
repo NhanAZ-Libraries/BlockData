@@ -8,12 +8,6 @@ Persistent block data virion for Axolotl-PM plugins using LevelDB and JSON
 [![Discord](https://img.shields.io/discord/986553214889517088?label=Discord&logo=discord&logoColor=white&color=5865F2)](https://discord.gg/j2X83ujT6c)
 
 
-## Overview
-
-Each plugin using BlockData gets a separate LevelDB database for each world under its data folder. Values are cached while their chunk is loaded. Pending writes are flushed on world save, chunk unload, or plugin disable.
-
-BlockData is a library for plugin authors. It cannot be installed as a standalone server plugin.
-
 ## Features
 
 - Store JSON-compatible strings, numbers, booleans, and arrays at block coordinates.
