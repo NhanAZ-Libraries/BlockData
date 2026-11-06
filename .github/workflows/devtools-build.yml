@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   build:
-    uses: NhanAZ/DevTools/.github/workflows/build-plugin.yml@v2
+    uses: AxolotlBucketLabs/DevTools/.github/workflows/build-plugin.yml@v3
     with:
       type: virion
       phpstan: off

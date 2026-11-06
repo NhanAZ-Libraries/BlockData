@@ -19,7 +19,7 @@ Persistent block data virion for Axolotl-PM plugins using LevelDB and JSON
 
 - The virion declares Axolotl-PM plugin API 5.0.0. The exact development dependency revision used by CI is recorded in the lockfile and [CI workflow](.github/workflows/ci.yml); it does not define the supported server patch range.
 - PHP 8.1 or newer, with the JSON and LevelDB extensions supplied by the server.
-- [DevTools](https://github.com/NhanAZ/DevTools) for folder development and shaded PHAR builds. The consumer workflow pins the exact builder revision.
+- [DevTools](https://github.com/AxolotlBucketLabs/DevTools) for folder development and shaded PHAR builds. The consumer workflow pins the exact builder revision.
 
 The minimum server patch release has not been established independently. Runtime compatibility across all Axolotl-PM 5.x releases has not been tested.
 
