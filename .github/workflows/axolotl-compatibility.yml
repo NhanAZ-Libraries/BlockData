@@ -89,7 +89,7 @@ jobs:
             $manifest["require-dev"]["axolotl-pm/pocketmine-mp"] = $tag;
             file_put_contents($path, json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
           ' "$CANDIDATE_TAG"
-          composer validate --strict
+          composer validate --strict --no-check-lock
           composer update axolotl-pm/pocketmine-mp --with-dependencies --no-interaction --prefer-dist --no-progress --no-scripts --no-plugins
           resolved="$(jq -cer '([.packages[]?, .["packages-dev"][]?] | map(select(.name == "axolotl-pm/pocketmine-mp")) | if length == 1 then .[0] else error("expected one resolved Axolotl-PM package") end)' composer.lock)"
           resolved_version="$(jq -er '.version' <<< "$resolved")"
